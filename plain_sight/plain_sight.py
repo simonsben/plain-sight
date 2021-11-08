@@ -4,13 +4,15 @@ from plain_sight.cmd_io import get_input, get_password, get_yes_no
 from plain_sight.encryption import decrypt_data, encrypt_data
 from plain_sight.file_io import load_file, save_file
 from json import loads, dumps
-from typing import Callable, Dict, Optional, List
+from typing import Callable, Dict, Optional, List, Iterable
 from plain_sight.log import get_logger
 from plain_sight.account import Account
+from re import search, Match
 
 
 logger = get_logger('plain_sight')
 _ENCODING = 'utf8'
+_MAX_RESULTS = environ.get('max_search_results', 10)
 
 
 class PlainSight:
@@ -35,7 +37,8 @@ class PlainSight:
             'l': self.list_accounts,
             'c': self.close,
             'h': self.help,
-            'n': self.new_account
+            'n': self.new_account,
+            's': self.search_accounts
         }
 
     @property
@@ -86,15 +89,35 @@ class PlainSight:
         if len(accounts) < 1:
             print('No accounts present in vault.')
 
-        for index, account in enumerate(accounts):
-            print(f'[{index}] - {account}')
+        print(self.format_output(accounts))
 
     def new_account(self) -> None:
-        account = Account()
-        account.create()
+        """ Create a new account entry """
+        raw_account = Account.collect_info()
+        account = Account(raw_account)
 
         self.accounts.append(account)
         self.updated = True
+
+    def search_accounts(self) -> None:
+        """ Search accounts then view or edit """
+        search_pattern = r'(\d+)|(.*)'
+        while True:
+            search_term = get_input('Search term: ', default='')
+            accounts = [account for account in self.accounts if account.search(search_term)]
+            print(self.format_output(accounts)[:_MAX_RESULTS])
+
+            if len(accounts) > _MAX_RESULTS:
+                print(f'More than {_MAX_RESULTS} returned, only {_MAX_RESULTS} shown.')
+
+            selection = get_input('Enter index to view account, anything else to exit. ', search_pattern)
+            selection_match = search(search_pattern, selection)
+
+            if selection_match.group(1) is None:
+                break
+
+            index = int(selection_match.group(0))
+            accounts[index].interaction()
 
     @staticmethod
     def load_data(plain_text: str) -> dict:
@@ -111,6 +134,7 @@ class PlainSight:
         cipher_text = encrypt_data(self.password, plain_text)
 
         save_file(self.vault_path, cipher_text)
+        logger.debug('Saved file to %s.', self.vault_path)
 
     def close(self) -> None:
         if self.updated:
@@ -122,3 +146,9 @@ class PlainSight:
         del self.plain_data
 
         exit(0)
+
+    @staticmethod
+    def format_output(accounts: Iterable[Account]) -> str:
+        output = '\n'.join((f'[{index}] - {account}' for index, account in enumerate(accounts)))
+
+        return output

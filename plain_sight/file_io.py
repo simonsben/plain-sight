@@ -46,7 +46,7 @@ def load_config(filename: Union[Path, str] = 'config.json') -> dict:
 
     # Make config environment variables
     for key in config:
-        environ[key] = config[key]
+        environ[key] = str(config[key])
 
     return config
 
