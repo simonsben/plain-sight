@@ -2,17 +2,20 @@ from os import environ
 from pathlib import Path
 from plain_sight.cmd_io import get_input, get_password, get_yes_no
 from plain_sight.encryption import decrypt_data, encrypt_data
-from plain_sight.file_io import load_file, save_file
+from plain_sight.file_io import load_file, save_file, json_helper
 from json import loads, dumps
 from typing import Callable, Dict, Optional, List, Iterable
 from plain_sight.log import get_logger
 from plain_sight.account import Account
-from re import search, Match
+from re import search, Match, compile
 
 
 logger = get_logger('plain_sight')
 _ENCODING = 'utf8'
-_MAX_RESULTS = environ.get('max_search_results', 10)
+_MAX_RESULTS = int(environ.get('max_search_results', 10))
+_SELECTION_PATTERN = r'(\d+)|(\w?)'
+selection_pattern = compile(_SELECTION_PATTERN)
+number_pattern = compile(r'\d+')
 
 
 class PlainSight:
@@ -43,15 +46,17 @@ class PlainSight:
 
     @property
     def accounts(self) -> List[Account]:
+        """ Accessor for list of accounts """
         accounts = self.plain_data.get('accounts', [])
 
-        if len(accounts) < 1:
+        if len(accounts) < 1:   # If list is not initialized, attach new list to data
             self.plain_data['accounts'] = accounts
 
         return accounts
 
     @staticmethod
     def select_file() -> Path:
+        """ Select file to load """
         default_path = Path(environ.get('key_file', 'passwords.vault'))
 
         while True:
@@ -68,15 +73,24 @@ class PlainSight:
         return Path(vault_path)
 
     def interaction(self) -> None:
+        """ Implements the command line interactivity """
         while True:
-            option_choice = get_input('What would you like to do? (h for help) ', r'\w{1}', 'h')
+            option_choice = get_input('What would you like to do? (h for help) ', _SELECTION_PATTERN, 'h')
             logger.debug('Chose %s.', option_choice)
 
-            option: Callable = self.options.get(option_choice, self.help)
+            selection_match = selection_pattern.fullmatch(option_choice)
 
-            option()
+            if selection_match.group(1):    # If match was a number, it is an account reference
+                selection = selection_match.group(0)
+
+                self.view_account(int(selection))
+            else:                           # If match was a character, it is a function reference
+                option: Callable = self.options.get(option_choice, self.help)
+
+                option()
 
     def help(self) -> None:
+        """ Help function for interactive functionality """
         print('Plain Sight Help\n')
         for option in self.options:
             option_name: str = self.options[option].__name__
@@ -85,6 +99,7 @@ class PlainSight:
             print(f'{option} - {display_name}')
 
     def list_accounts(self) -> None:
+        """ List the accounts in the vault """
         accounts = self.plain_data.get('accounts', [])
         if len(accounts) < 1:
             print('No accounts present in vault.')
@@ -101,7 +116,6 @@ class PlainSight:
 
     def search_accounts(self) -> None:
         """ Search accounts then view or edit """
-        search_pattern = r'(\d+)|(.*)'
         while True:
             search_term = get_input('Search term: ', default='')
             accounts = [account for account in self.accounts if account.search(search_term)]
@@ -110,17 +124,29 @@ class PlainSight:
             if len(accounts) > _MAX_RESULTS:
                 print(f'More than {_MAX_RESULTS} returned, only {_MAX_RESULTS} shown.')
 
-            selection = get_input('Enter index to view account, anything else to exit. ', search_pattern)
-            selection_match = search(search_pattern, selection)
+            selection = get_input('Enter index to view account, anything else to exit. ', _SELECTION_PATTERN)
+            selection_match: Match = search(_SELECTION_PATTERN, selection)
 
             if selection_match.group(1) is None:
                 break
 
             index = int(selection_match.group(0))
-            accounts[index].interaction()
+            self.view_account(index, accounts)
+
+    def view_account(self, index: int = None, accounts: List[Account] = None) -> None:
+        """ Interact with specific account entity """
+        account_pool = accounts if accounts else self.accounts
+
+        if index >= len(account_pool):
+            logger.warning(f'Index {index} is larger than the maximum index of {index - 1}.')
+        elif index < 0:
+            logger.error('Index must be larger than zero.')
+
+        return account_pool[index].interaction()
 
     @staticmethod
     def load_data(plain_text: str) -> dict:
+        """ Load plaintext data into object """
         plain_data: dict = loads(plain_text)
         accounts = plain_data.get('accounts', [])
 
@@ -129,7 +155,8 @@ class PlainSight:
         return plain_data
 
     def save_data(self) -> None:
-        json_string = dumps(self.plain_data, default=lambda obj: getattr(obj, 'json_helper')())
+        """ Save data in memory to the same file that was read """
+        json_string = dumps(self.plain_data, default=json_helper)
         plain_text = json_string.encode(_ENCODING)
         cipher_text = encrypt_data(self.password, plain_text)
 
@@ -137,6 +164,7 @@ class PlainSight:
         logger.debug('Saved file to %s.', self.vault_path)
 
     def close(self) -> None:
+        """ Close application and save data if modified """
         if self.updated:
             will_save = get_yes_no('Would you like to save the changes?')
             if will_save:

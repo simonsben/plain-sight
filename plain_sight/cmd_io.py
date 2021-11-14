@@ -10,7 +10,7 @@ def get_input(prompt: str, validation: str = '.+', default: Union[str, None] = N
     return response
 
 
-def get_password():
+def get_password() -> str:
     return get_input('Password: ', r'[!@#$%^&*\w\d]+')
 
 

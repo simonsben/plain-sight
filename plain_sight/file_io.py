@@ -51,5 +51,10 @@ def load_config(filename: Union[Path, str] = 'config.json') -> dict:
     return config
 
 
+def json_helper(obj):
+    """ Specifies the name of the helper function for exporting to json """
+    return obj.to_json()
+
+
 load_config()
 logger = get_logger('file_io')

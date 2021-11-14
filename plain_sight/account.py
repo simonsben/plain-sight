@@ -7,7 +7,7 @@ from re import compile
 
 _SKIP_ATTRIBUTES = {'options', 'password'}
 logger = get_logger('account')
-builtin_pattern = compile(r'__\w+__')
+builtin_pattern = compile(r'(__\w+__)|(options)')
 
 
 class Account:
@@ -16,7 +16,7 @@ class Account:
             self.load(package)
 
         self.options: Dict[str, Callable[[Optional[int]], None]] = {
-            'c': self.close(),
+            'c': self.close,
             'v': self.view_account,
             'p': self.get_password,
             # 'e': self.edit,
@@ -29,7 +29,7 @@ class Account:
             setattr(self, key, data[key])
 
     def close(self) -> None:
-        """ Placeholder """
+        """ No action required """
         pass
 
     @staticmethod
@@ -50,6 +50,7 @@ class Account:
         return package
 
     def interaction(self) -> None:
+        """ Implements the command line interactivity """
         while True:
             option_choice = get_input('Account operation? (h for help) ', r'\w{1}', 'h')
             logger.debug('Chose %s.', option_choice)
@@ -62,6 +63,7 @@ class Account:
             option()
 
     def help(self) -> None:
+
         print('Plain Sight Account Help\n')
         for option in self.options:
             option_name: str = self.options[option].__name__
@@ -69,7 +71,8 @@ class Account:
 
             print(f'{option} - {display_name}')
 
-    def json_helper(self) -> Dict[str, Union[str, int]]:
+    def to_json(self) -> Dict[str, Union[str, int]]:
+        """ Used to help export object to json """
         attributes = self.get_attributes()
 
         return {attribute: getattr(self, attribute) for attribute in attributes}
