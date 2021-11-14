@@ -60,7 +60,7 @@ class PlainSight:
         default_path = Path(environ.get('key_file', 'passwords.vault'))
 
         while True:
-            vault_path = get_input(f'Enter vault path [{default_path}]: ', r'.*')
+            vault_path = get_input(f'Enter vault path [{default_path}]:', r'.*')
 
             if vault_path == '':
                 print(f'Selected default path: {default_path}')
@@ -75,7 +75,7 @@ class PlainSight:
     def interaction(self) -> None:
         """ Implements the command line interactivity """
         while True:
-            option_choice = get_input('What would you like to do? (h for help) ', _SELECTION_PATTERN, 'h')
+            option_choice = get_input('What would you like to do? (h for help)', _SELECTION_PATTERN, 'h')
             logger.debug('Chose %s.', option_choice)
 
             selection_match = selection_pattern.fullmatch(option_choice)
@@ -117,14 +117,14 @@ class PlainSight:
     def search_accounts(self) -> None:
         """ Search accounts then view or edit """
         while True:
-            search_term = get_input('Search term: ', default='')
+            search_term = get_input('Search term:', default='')
             accounts = [account for account in self.accounts if account.search(search_term)]
             print(self.format_output(accounts)[:_MAX_RESULTS])
 
             if len(accounts) > _MAX_RESULTS:
                 print(f'More than {_MAX_RESULTS} returned, only {_MAX_RESULTS} shown.')
 
-            selection = get_input('Enter index to view account, anything else to exit. ', _SELECTION_PATTERN)
+            selection = get_input('Enter index to view account, anything else to exit.', _SELECTION_PATTERN)
             selection_match: Match = search(_SELECTION_PATTERN, selection)
 
             if selection_match.group(1) is None:
@@ -142,7 +142,11 @@ class PlainSight:
         elif index < 0:
             logger.error('Index must be larger than zero.')
 
-        return account_pool[index].interaction()
+        return account_pool[index].interaction(self.set_update_flag)
+
+    def set_update_flag(self) -> None:
+        """ Set update flag to True """
+        self.updated = True
 
     @staticmethod
     def load_data(plain_text: str) -> dict:

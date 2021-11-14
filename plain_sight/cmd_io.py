@@ -3,7 +3,7 @@ from typing import Union
 
 
 def get_input(prompt: str, validation: str = '.+', default: Union[str, None] = None) -> Union[str, None]:
-    response = input(prompt)
+    response = input(prompt + ' ')
 
     if fullmatch(validation, response) is None:
         return default
