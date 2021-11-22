@@ -3,7 +3,11 @@ from typing import Union
 
 
 def get_input(prompt: str, validation: str = '.+', default: Union[str, None] = None) -> Union[str, None]:
+    """ Get input from command line """
     response = input(prompt + ' ')
+
+    if type(response) not in {str, bytes}:
+        return default
 
     if fullmatch(validation, response) is None:
         return default
@@ -11,6 +15,7 @@ def get_input(prompt: str, validation: str = '.+', default: Union[str, None] = N
 
 
 def get_password() -> str:
+    """ Collect password input """
     return get_input('Password: ', r'[!@#$%^&*\w\d]+')
 
 
@@ -21,4 +26,3 @@ def get_yes_no(message: str) -> bool:
         response = get_input(f'{message} (y/n) ', r'[yn]')
 
     return response == 'y'
-

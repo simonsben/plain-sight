@@ -1,4 +1,4 @@
-from logging import getLogger, Logger, StreamHandler, Formatter
+from logging import getLogger, Logger, StreamHandler, Formatter, Handler
 from sys import stdout
 from os import environ
 

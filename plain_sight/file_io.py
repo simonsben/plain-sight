@@ -33,8 +33,24 @@ def save_file(filename: Union[Path, str], data: bytes) -> None:
         logger.error('Error writing to %s.', str(filename), exc_info=e)
 
 
+# TODO figure out how to use logger instead of prints (import order)
 def load_config(filename: Union[Path, str] = 'config.json') -> dict:
     """ Load config and parse to dict """
+    if isinstance(filename, str):
+        filename = Path(filename)
+
+    file_name = filename.name
+    full_path = filename.absolute().parent
+    for _ in range(3):
+        if (full_path / file_name).exists():
+            break
+        full_path = full_path.parent
+
+    filename = full_path / file_name
+    if not (full_path / file_name).exists():
+        print('Couldn\'t locate config file.')
+        exit(1)
+
     data = load_file(filename)
     config = {}
 
@@ -42,7 +58,7 @@ def load_config(filename: Union[Path, str] = 'config.json') -> dict:
         config = data.decode('utf8')
         config = loads(config)
     except Exception as e:
-        logger.error('Error decoding config data from %s.', str(filename), exc_info=e)
+        print(f'Error decoding config data from {filename}.')
 
     # Make config environment variables
     for key in config:
