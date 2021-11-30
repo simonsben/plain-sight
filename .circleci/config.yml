@@ -25,6 +25,7 @@ jobs:
       - run:
           name: Run tests
           command: |
+            source venv/bin/activate
             pytest
       - store_test_results:
           path: test-results
