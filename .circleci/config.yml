@@ -4,7 +4,7 @@ orbs:
 
 jobs:
   build-and-test: # This is the name of the job, feel free to change it to better match what you're trying to do!
-    working_directory: ~/plain-sight
+#    working_directory: ~/plain-sight
     docker:
       - image: cimg/python:3.8
     # Checkout the code as the first step. This is a dedicated CircleCI step.
