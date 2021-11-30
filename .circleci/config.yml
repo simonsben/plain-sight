@@ -26,6 +26,8 @@ jobs:
           name: Run tests
           command: |
             source venv/bin/activate
+            ls
+            echo $PWD
             pytest
       - store_test_results:
           path: test-results
