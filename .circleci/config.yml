@@ -22,7 +22,8 @@ jobs:
             pipenv install
       - run:
           name: Run tests
-          command: pytest
+          command: |
+            pipenv run python pytest
       - store_test_results:
           path: test-results
 
