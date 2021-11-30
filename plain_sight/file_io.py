@@ -5,6 +5,10 @@ from json import loads
 from os import environ
 
 
+CONFIG_FILENAME = 'config.json'
+CONFIG_TEMPLATE_FILENAME = 'config.template.json'
+
+
 def load_file(filename: Union[Path, str]) -> bytes:
     """ Load file as bytes """
     if isinstance(filename, str):
@@ -34,7 +38,7 @@ def save_file(filename: Union[Path, str], data: bytes) -> None:
 
 
 # TODO figure out how to use logger instead of prints (import order)
-def load_config(filename: Union[Path, str] = 'config.json') -> dict:
+def load_config(filename: Union[Path, str] = CONFIG_FILENAME) -> dict:
     """ Load config and parse to dict """
     if isinstance(filename, str):
         filename = Path(filename)
@@ -48,8 +52,7 @@ def load_config(filename: Union[Path, str] = 'config.json') -> dict:
 
     filename = full_path / file_name
     if not (full_path / file_name).exists():
-        print('Couldn\'t locate config file.')
-        exit(1)
+        raise FileNotFoundError(f'Config file, {filename}, could not be found.')
 
     data = load_file(filename)
     config = {}
@@ -57,7 +60,7 @@ def load_config(filename: Union[Path, str] = 'config.json') -> dict:
     try:
         config = data.decode('utf8')
         config = loads(config)
-    except Exception as e:
+    except Exception:
         print(f'Error decoding config data from {filename}.')
 
     # Make config environment variables
@@ -72,5 +75,8 @@ def json_helper(obj):
     return obj.to_json()
 
 
-load_config()
+_filename = CONFIG_FILENAME if Path(CONFIG_FILENAME).exists() else CONFIG_TEMPLATE_FILENAME
+load_config(_filename)
+
 logger = get_logger('file_io')
+logger.info('Config loaded from %s.', _filename)
