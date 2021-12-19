@@ -1,5 +1,5 @@
 jobs:
-  build:
+  build_and_test:
     executor: python/default
     steps:
       - checkout
@@ -15,10 +15,7 @@ jobs:
       - run:
           command: |
             pytest --version
-          name: Test
-  run_tests:
-    executor: python/default
-    steps:
+          name: Confirm pytest version
       - run:
           command: |
             pytest
@@ -29,5 +26,4 @@ version: 2.1
 workflows:
   main:
     jobs:
-      - build
-      - run_tests
+      - build_and_test
