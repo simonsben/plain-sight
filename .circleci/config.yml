@@ -30,3 +30,4 @@ workflows:
   main:
     jobs:
       - build
+      - run_tests
