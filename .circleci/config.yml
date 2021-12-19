@@ -19,10 +19,10 @@ jobs:
           name: Clone repo
           command: |
             git clone https://github.com/simonsben/plain-sight.git
-            cd plain-sight
       - run:
           name: Install dependancies
           command: |
+            ls
             python -m venv venv
             source venv/bin/activate
             pip install --upgrade pip
