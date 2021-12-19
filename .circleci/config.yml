@@ -1,0 +1,33 @@
+version: 2.1
+
+jobs:
+  build-and-test:
+    docker:
+      - image: circleci/python:3.8
+    steps:
+      - checkout
+      - run:
+          name: Clone repo
+          command: |
+            git clone https://github.com/simonsben/plain-sight.git
+      - run:
+          name: Install dependancies
+          command: |
+            cd plain-sight
+            python -m venv venv
+            source venv/bin/activate
+            pip install --upgrade pip
+            pip install -r requirements.txt
+      - run:
+          name: Run tests
+          command: |
+            cd plain-sight
+            source venv/bin/activate
+            pytest
+      - store_test_results:
+          path: test-results
+
+workflows:
+  sample:
+    jobs:
+      - build-and-test
