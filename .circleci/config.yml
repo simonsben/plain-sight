@@ -22,7 +22,7 @@ jobs:
       - run:
           name: Install dependancies
           command: |
-            ls
+            cd plain-sight
             python -m venv venv
             source venv/bin/activate
             pip install --upgrade pip
@@ -30,9 +30,8 @@ jobs:
       - run:
           name: Run tests
           command: |
+            cd plain-sight
             source venv/bin/activate
-            ls
-            echo $PWD
             pytest
       - store_test_results:
           path: test-results
